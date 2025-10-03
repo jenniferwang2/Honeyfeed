@@ -18,7 +18,16 @@ body {
     margin-bottom: 20px;
   }
   
-  .controls select,
+  /* Dropdown is small */
+  .controls select {
+    padding: 6px 8px;
+    border: 1px solid #ffd6e7;
+    border-radius: 6px;
+    width: 160px;
+    flex: 0 0 auto;
+  }
+  
+  /* Input stretches like a real search bar */
   .controls input {
     padding: 6px 8px;
     border: 1px solid #ffd6e7;
