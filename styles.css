@@ -2,38 +2,56 @@ body {
     font-family: Arial, sans-serif;
     background: #fff0f6;
     color: #333;
+    margin: 0;
     padding: 20px;
     line-height: 1.5;
   }
   
   h1 {
     color: #d6336c;
-  }
-  
-  .controls {
     margin-bottom: 20px;
   }
   
-  button {
-    margin-left: 10px;
-    padding: 5px 12px;
-    background: #ff85c0;
-    border: none;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
   }
   
-  button:hover {
+  .controls select,
+  .controls input {
+    padding: 6px 8px;
+    border: 1px solid #ffd6e7;
+    border-radius: 6px;
+    flex: 1;
+  }
+  
+  .controls button {
+    padding: 6px 14px;
+    background: #ff85c0;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .controls button:hover {
     background: #f759ab;
+  }
+  
+  main {
+    max-width: 800px;
+    margin: auto;
   }
   
   .card {
     border: 1px solid #ffd6e7;
     border-radius: 8px;
     padding: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   
   .badge {
@@ -47,5 +65,10 @@ body {
   .meta {
     font-size: 0.8em;
     color: #666;
+  }
+  
+  .muted {
+    color: #888;
+    font-size: 0.9em;
   }
   
