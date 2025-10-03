@@ -10,19 +10,19 @@ function badge(score) {
   return `<span class="badge">${vibe(score)} (${score.toFixed(2)})</span>`;
 }
 
-function card({ title, url, text, meta, score }) {
+function card({ title, url, meta, score }) {
   return `
     <div class="card">
-      ${title ? `<div><a href="${url || "#"}" target="_blank" rel="noopener">${title}</a> ${badge(score)}</div>` : ""}
-      ${text ? `<div>${text}</div>` : ""}
+      <div><a href="${url}" target="_blank" rel="noopener">${title}</a> ${badge(score)}</div>
       ${meta ? `<div class="meta">${meta}</div>` : ""}
     </div>
   `;
 }
 
+// --- Reddit fetching ---
 async function getRedditFeed(sub, type="hot", limit=10) {
   const res = await fetch(`https://www.reddit.com/r/${sub}/${type}.json?limit=${limit}`);
-  if (!res.ok) throw new Error(`Failed to load ${type} posts`);
+  if (!res.ok) throw new Error(`Failed to load ${type} posts for ${sub}`);
   const data = await res.json();
   return data.data.children.map(c => c.data);
 }
@@ -38,7 +38,9 @@ async function loadReddit(sub) {
       getRedditFeed(sub, "controversial")
     ]);
 
-    let html = `<h3>🔥 Hot</h3>`;
+    let html = `<h2>Results for r/${sub}</h2>`;
+
+    html += `<h3>🔥 Hot</h3>`;
     hot.forEach(p => {
       const s = sentiment.analyze(p.title).comparative || 0;
       html += card({
@@ -71,7 +73,6 @@ async function loadReddit(sub) {
       });
     });
 
-    // AI-ish: extract trending keywords
     const keywords = extractKeywords([...hot, ...top, ...cont]);
     html += `<h3>📊 Trending Keywords</h3><ul>` +
       keywords.map(k => `<li>${k[0]} (${k[1]})</li>`).join("") +
@@ -84,7 +85,6 @@ async function loadReddit(sub) {
   }
 }
 
-// Keyword extraction (basic ML/NLP flavor)
 function extractKeywords(posts) {
   const counts = {};
   posts.forEach(p => {
@@ -93,82 +93,56 @@ function extractKeywords(posts) {
       if (w.length > 3) counts[w] = (counts[w] || 0) + 1;
     });
   });
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 }
 
-function slugify(s) {
-    return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  }
-  
-  async function loadTweetsFor(query) {
-    const box = document.getElementById("tweets");
-    box.innerHTML = "<p class='muted'>Loading tweets…</p>";
-  
-    try {
-      const file = `data/tweets-${slugify(query)}.json`;
-      const res = await fetch(file, { cache: "no-store" });
-      if (!res.ok) throw new Error("No cached tweets yet.");
-      const rows = await res.json();
-  
-      const items = rows.slice(0, 15).map(t => {
-        const s = sentiment.analyze(t.content).comparative || 0;
-        return card({
-          title: `@${t.username}`,
-          url: t.url,
-          text: t.content,
-          meta: new Date(t.date).toLocaleString(),
-          score: s,
-        });
-      });
-  
-      box.innerHTML = items.join("") || "<p class='muted'>No tweets found.</p>";
-    } catch (e) {
-      box.innerHTML = `<p class='muted'>${e.message}</p>`;
-    }
-  }
-  
-
-// Load trending fandoms into dropdown
+// --- Dropdown and custom input ---
 async function loadTrendingFandoms() {
-  const res = await fetch("https://www.reddit.com/subreddits/popular.json?limit=20");
-  const data = await res.json();
-  const select = document.getElementById("fandom");
+  try {
+    const res = await fetch("https://www.reddit.com/subreddits/popular.json?limit=20");
+    if (!res.ok) throw new Error("Failed to load trending subreddits");
+    const data = await res.json();
+    const select = document.getElementById("fandom");
 
-  select.innerHTML = "";
-  data.data.children.forEach(c => {
-    const name = c.data.display_name;
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    select.appendChild(opt);
-  });
+    select.innerHTML = "";
+    data.data.children.forEach(c => {
+      const name = c.data.display_name;
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
-// Event listeners
+// --- Event listeners ---
 document.getElementById("go").addEventListener("click", () => {
-  const fandom = document.getElementById("fandom").value;
+  let fandom = document.getElementById("customFandom").value.trim();
+  if (!fandom) {
+    fandom = document.getElementById("fandom").value;
+  }
   if (!fandom) return;
   loadReddit(fandom);
-  loadTweetsFor(fandom);
 });
 
-// On load, populate dropdown + show default
+// On load: fill dropdown and fetch default
 window.addEventListener("load", async () => {
   await loadTrendingFandoms();
   const defaultFandom = document.getElementById("fandom").value;
   if (defaultFandom) {
     loadReddit(defaultFandom);
-    loadTweetsFor(defaultFandom);
   }
 });
 
 // Auto-refresh every 60s
 setInterval(() => {
-  const fandom = document.getElementById("fandom").value;
+  let fandom = document.getElementById("customFandom").value.trim();
+  if (!fandom) {
+    fandom = document.getElementById("fandom").value;
+  }
   if (fandom) {
     loadReddit(fandom);
-    loadTweetsFor(fandom);
   }
 }, 60000);
