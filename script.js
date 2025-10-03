@@ -1,4 +1,5 @@
-const sentiment = new Sentiment();
+// Change this when deployed to your Render URL!
+const API_BASE = "http://127.0.0.1:5000";
 
 function vibe(score) {
   if (score > 0.2) return "💖 pos";
@@ -19,15 +20,27 @@ function card({ title, url, meta, score }) {
   `;
 }
 
-// --- Reddit fetching with CORS proxy ---
-async function getRedditFeed(sub, type="hot", limit=10) {
-  const url = `https://www.reddit.com/r/${sub}/${type}.json?limit=${limit}`;
-  const proxy = "https://cors.isomorphic-git.org/"; // adds CORS headers
-  const res = await fetch(proxy + url);
-  if (!res.ok) throw new Error(`Failed to load ${type} posts for ${sub}`);
-  const data = await res.json();
-  return data.data.children.map(c => c.data);
-}
+// Fetch subreddit posts through Flask
+async function getRedditFeed(sub, type="hot") {
+    const res = await fetch(`${API_BASE}/feed?sub=${encodeURIComponent(sub)}&type=${encodeURIComponent(type)}`);
+    if (!res.ok) throw new Error("Feed error");
+    return await res.json();
+  }
+  
+  // Fetch popular subs through Flask
+  async function loadTrendingFandoms() {
+    const res = await fetch(`${API_BASE}/popular`);
+    if (!res.ok) throw new Error("Popular error");
+    const data = await res.json();
+    const select = document.getElementById("fandom");
+    select.innerHTML = "";
+    data.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.name;
+      opt.textContent = c.name;
+      select.appendChild(opt);
+    });
+  }  
 
 async function loadReddit(sub) {
   const box = document.getElementById("reddit");
