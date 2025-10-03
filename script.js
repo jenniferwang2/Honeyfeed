@@ -19,9 +19,11 @@ function card({ title, url, meta, score }) {
   `;
 }
 
-// --- Reddit fetching ---
+// --- Reddit fetching with CORS proxy ---
 async function getRedditFeed(sub, type="hot", limit=10) {
-  const res = await fetch(`https://www.reddit.com/r/${sub}/${type}.json?limit=${limit}`);
+  const url = `https://www.reddit.com/r/${sub}/${type}.json?limit=${limit}`;
+  const proxy = "https://cors.isomorphic-git.org/"; // adds CORS headers
+  const res = await fetch(proxy + url);
   if (!res.ok) throw new Error(`Failed to load ${type} posts for ${sub}`);
   const data = await res.json();
   return data.data.children.map(c => c.data);
